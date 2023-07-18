@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import { auth, firestore } from './firebase.js';
+import { auth, firestore, storage } from './firebase.js';
 
 const RegisterPage = () => {
   const router = useRouter();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [profilePic, setProfilePic] = useState(null);
   const [error, setError] = useState(null);
 
   const handleRegister = async (e) => {
@@ -18,20 +20,40 @@ const RegisterPage = () => {
         password
       );
 
-      console.log('User ID:', userCredential.user.uid); 
-
       // Store additional user data in Firestore
-      await firestore.collection('users').doc(userCredential.user.uid).set({
+      const userData = {
         email: email,
+        name: name,
         password: password,
-      });
+      };
 
-      console.log('User data stored in Firestore');
+      // Upload profile picture if selected
+      if (profilePic) {
+        // Create a reference to the storage location
+        const storageRef = storage.ref(`profile-pics/${userCredential.user.uid}`);
+
+        // Upload the profile picture file to storage
+        const snapshot = await storageRef.put(profilePic);
+
+        // Get the download URL for the uploaded profile picture
+        const downloadURL = await snapshot.ref.getDownloadURL();
+
+        // Add the download URL to the userData object
+        userData.profilePic = downloadURL;
+      }
+
+      await firestore.collection('users').doc(userCredential.user.uid).set(userData);
+
       // Redirect or perform additional actions upon successful registration
       router.push('/dashboard'); // Example: Redirect to dashboard page
     } catch (error) {
       setError(error.message);
     }
+  };
+
+  const handleProfilePicChange = (e) => {
+    const file = e.target.files[0];
+    setProfilePic(file);
   };
 
   return (
@@ -50,6 +72,19 @@ const RegisterPage = () => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
+          className="input"
+        />
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Name"
+          className="input"
+        />
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleProfilePicChange}
           className="input"
         />
         <button type="submit" className="button">
