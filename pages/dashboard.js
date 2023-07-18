@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from './firebase.js';
 
-const DashboardPage = () => {
+const dashboard = () => {
   const router = useRouter();
 
   const [user, setUser] = useState(null);
@@ -14,6 +14,7 @@ const DashboardPage = () => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
         setUser(user);
+        fetchUserData(user.uid); // Fetch user data from Firestore
       } else {
         router.push('/login'); // Redirect to login page if user is not logged in
       }
@@ -47,12 +48,43 @@ const DashboardPage = () => {
     }
   };
 
+  const fetchUserData = async (userId) => {
+    try {
+      const userSnapshot = await firestore.collection('users').doc(userId).get();
+      if (userSnapshot.exists) {
+        setUser({ ...user, name: userSnapshot.data().name });
+      }
+    } catch (error) {
+      console.error('Error retrieving user data:', error);
+    }
+  };
+
+  const handleProfileClick = () => {
+    router.push('/profile'); // Redirect to the profile page
+  };
+
+  const handleUploadClick = () => {
+    router.push('/uploadQuote'); // Redirect to the upload quotes page
+  };
+
+  const formatTimestamp = (timestamp) => {
+    if (timestamp && timestamp.toDate) {
+      return timestamp.toDate().toLocaleString();
+    } else {
+      return '';
+    }
+  };
+
   return (
     <div className="container">
       <h2 className="title">Dashboard</h2>
       <div className="user-info">
-        <p>Welcome, {user && user.email}</p>
+        <p>Welcome, {user && user.name}</p>
         <button onClick={handleLogout}>Logout</button>
+      </div>
+      <div className="actions">
+        <button onClick={handleProfileClick}>Update/View Profile</button>
+        <button onClick={handleUploadClick}>Upload Quotes</button>
       </div>
       <h3 className="section-title">Recent Quotes</h3>
       {loading ? (
@@ -72,7 +104,7 @@ const DashboardPage = () => {
                   <p className="author">- {quote.author}</p>
                 </div>
               </div>
-              <p className="timestamp">{quote.timestamp.toDate().toLocaleString()}</p>
+              <p className="timestamp">{formatTimestamp(quote.timestamp)}</p>
             </li>
           ))}
         </ul>
@@ -96,6 +128,14 @@ const DashboardPage = () => {
           align-items: center;
           justify-content: space-between;
           margin-bottom: 20px;
+        }
+
+        .actions {
+          margin-bottom: 20px;
+        }
+
+        .actions button {
+          margin-right: 10px;
         }
 
         .section-title {
@@ -152,4 +192,4 @@ const DashboardPage = () => {
   );
 };
 
-export default DashboardPage;
+export default dashboard;
