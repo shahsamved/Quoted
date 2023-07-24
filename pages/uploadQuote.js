@@ -33,11 +33,13 @@ const QuoteUpload = () => {
   
         // Get the download URL for the uploaded profile picture
         const downloadURL = await snapshot.ref.getDownloadURL();
+        console.log("Download URL");
+        console.log(downloadURL);
   
         quoteData.profilePic = downloadURL;
   
         // Update the quote document with the download URL
-        await firestore.collection('quotes').doc(docRef.id).update({ profilePic: downloadURL });
+        await firestore.collection('quotes').doc(docRef.id).set(quoteData);
       }
   
       // Clear the form after successful quote upload

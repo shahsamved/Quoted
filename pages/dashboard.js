@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { auth, firestore } from './firebase.js';
+import { FaEdit, FaTrash } from 'react-icons/fa';
 
 const dashboard = () => {
   const router = useRouter();
@@ -9,6 +10,8 @@ const dashboard = () => {
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  
+
   useEffect(() => {
     // Check if user is logged in
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -16,7 +19,7 @@ const dashboard = () => {
         setUser(user);
         fetchUserData(user.uid); // Fetch user data from Firestore
       } else {
-        router.push('/login'); // Redirect to login page if user is not logged in
+        router.push('/login'); // Redirect to login page if the user is not logged in
       }
     });
 
@@ -26,23 +29,32 @@ const dashboard = () => {
   useEffect(() => {
     // Fetch quotes from Firestore
     const fetchQuotes = async () => {
-      try {
-        const quotesSnapshot = await firestore.collection('quotes').orderBy('timestamp', 'desc').get();
-        const quotesData = quotesSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        setQuotes(quotesData);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching quotes:', error);
-      }
-    };
-
-    fetchQuotes();
-  }, []);
+        try {
+          const quotesSnapshot = await firestore.collection('quotes').orderBy('timestamp', 'desc').get();
+  
+          if (quotesSnapshot.empty) {
+            // Handle the case where the "quotes" collection is empty
+            setLoading(false);
+            return;
+          }
+  
+          const quotesData = quotesSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+          setQuotes(quotesData);
+          setLoading(false);
+        } catch (error) {
+          console.error('Error fetching quotes:', error);
+          setLoading(false); // Ensure that loading state is set to false in case of an error
+        }
+      };
+  
+      fetchQuotes();
+    }, []);
+  
 
   const handleLogout = async () => {
     try {
       await auth.signOut();
-      router.push('/login'); // Redirect to login page after successful logout
+      router.push('/login'); // Redirect to the login page after successful logout
     } catch (error) {
       console.error('Error logging out:', error);
     }
@@ -67,6 +79,27 @@ const dashboard = () => {
     router.push('/uploadQuote'); // Redirect to the upload quotes page
   };
 
+  const handleEditClick = (quoteId) => {
+    // Redirect to the quote edit page with the quote ID as a query parameter
+    router.push(`/editQuote?id=${quoteId}`);
+  };
+
+  const handleDeleteClick = async (quoteId) => {
+    // Show a confirmation pop-up before deleting the quote
+    const isConfirmed = window.confirm('Are you sure you want to delete this quote?');
+
+    if (isConfirmed) {
+      try {
+        // Delete the quote document from Firestore
+        await firestore.collection('quotes').doc(quoteId).delete();
+        // Update the local quotes state by removing the deleted quote
+        setQuotes((prevQuotes) => prevQuotes.filter((quote) => quote.id !== quoteId));
+      } catch (error) {
+        console.error('Error deleting quote:', error);
+      }
+    }
+  };
+
   const formatTimestamp = (timestamp) => {
     if (timestamp && timestamp.toDate) {
       return timestamp.toDate().toLocaleString();
@@ -79,9 +112,17 @@ const dashboard = () => {
     <div className="container">
       <h2 className="title">Dashboard</h2>
       <div className="user-info">
-        <p>Welcome, {user && user.name}</p>
-        <button onClick={handleLogout}>Logout</button>
-      </div>
+  {user && user.authorProfilePic && (
+    <img
+      src={user.authorProfilePic}
+      alt={user.name}
+      className="author-profile-pic"
+    />
+  )}
+  <p>Welcome, {user && user.name}</p>
+  <button onClick={handleLogout}>Logout</button>
+</div>
+
       <div className="actions">
         <button onClick={handleProfileClick}>Update/View Profile</button>
         <button onClick={handleUploadClick}>Upload Quotes</button>
@@ -92,23 +133,40 @@ const dashboard = () => {
       ) : (
         <ul className="quote-list">
           {quotes.map((quote) => (
-            <li key={quote.id} className="quote-item">
-              <div className="quote-header">
-                <img
-                  src={quote.authorProfilePic || '/placeholder.png'}
-                  alt={quote.author}
-                  className="author-profile-pic"
-                />
-                <div className="quote-details">
-                  <p className="quote">{quote.quote}</p>
-                  <p className="author">- {quote.author}</p>
-                </div>
+  <li key={quote.id} className="quote-item">
+    <div className="quote-header">
+      {quote.profilePic ? (
+        <img
+          src={quote.profilePic}
+          alt={quote.author}
+          className="author-profile-pic"
+        />
+      ) : (
+        <img
+          src="/placeholder.png" // Replace with a placeholder image path
+          alt={quote.author}
+          className="author-profile-pic"
+        />
+      )}
+      <div className="quote-details">
+        <p className="quote">{quote.quote}</p>
+        <p className="author">- {quote.author}</p>
+      </div>
+    </div>
+    <p className="timestamp">{formatTimestamp(quote.timestamp)}</p>
+    <div className="quote-actions">
+                <button onClick={() => handleEditClick(quote.id)}>
+                  <FaEdit className="edit-icon" />
+                </button>
+                <button onClick={() => handleDeleteClick(quote.id)}>
+                  <FaTrash className="delete-icon" />
+                </button>
               </div>
-              <p className="timestamp">{formatTimestamp(quote.timestamp)}</p>
-            </li>
-          ))}
+  </li>
+))}
         </ul>
       )}
+
 
       <style jsx>{`
         .container {
@@ -187,6 +245,25 @@ const dashboard = () => {
           font-size: 12px;
           color: #777;
         }
+        .quote-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 5px;
+          }
+  
+          .edit-icon-container {
+            margin-right: 5px;
+          }
+  
+          .delete-icon-container {
+            color: red;
+          }
+  
+          .quote-actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+          }
       `}</style>
     </div>
   );
