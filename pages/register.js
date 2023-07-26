@@ -24,7 +24,7 @@ const RegisterPage = () => {
       const userData = {
         email: email,
         name: name,
-        password: password,
+        //password: password,
       };
 
       // Upload profile picture if selected

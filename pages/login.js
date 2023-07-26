@@ -22,6 +22,11 @@ const LoginPage = () => {
     }
   };
 
+  const handleForgotPassword = () => {
+    // Redirect to the "Forgot Password" page
+    router.push('/forgotPassword');
+  };
+
   return (
     <div className="container">
       <h2 className="title">Login</h2>
@@ -44,6 +49,12 @@ const LoginPage = () => {
           Login
         </button>
       </form>
+      <div className="forgot-password">
+        <p>Forgot your password?</p>
+        <button onClick={handleForgotPassword} className="link-button">
+          Reset Password
+        </button>
+      </div>
       {error && <p className="error">{error}</p>}
 
       <style jsx>{`
@@ -77,6 +88,22 @@ const LoginPage = () => {
           font-size: 16px;
           border: none;
           cursor: pointer;
+        }
+
+        .forgot-password {
+          display: flex;
+          align-items: center;
+          margin-top: 10px;
+        }
+
+        .link-button {
+          margin-left: 10px;
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: #0070f3;
+          font-weight: bold;
+          text-decoration: underline;
         }
 
         .error {

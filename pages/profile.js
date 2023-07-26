@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { auth, firestore, storage } from './firebase.js';
 import { useRouter } from 'next/router';
+import { FaEdit } from 'react-icons/fa';
+import { MdPerson } from 'react-icons/md';
 
 const profile = () => {
   const router = useRouter();
@@ -12,41 +14,66 @@ const profile = () => {
   useEffect(() => {
     const getUserData = async () => {
       try {
-        const userSnapshot = await firestore
-          .collection('users')
-          .doc(auth.currentUser.uid)
-          .get();
+        const currentUser = auth.currentUser;
+        if (!currentUser) {
+          // If the user is not logged in, redirect to the login page
+          router.push('/login');
+          return;
+        }
 
+        const userSnapshot = await firestore.collection('users').doc(currentUser.uid).get();
         if (userSnapshot.exists) {
           setUser(userSnapshot.data());
           setName(userSnapshot.data().name);
         }
       } catch (error) {
-        console.error('Error retrieving user data:', error);
+        setError('Error retrieving user data');
       }
     };
 
     getUserData();
+  }, [router]);
+
+  useEffect(() => {
+    const fetchProfilePic = async () => {
+      try {
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          // Fetch the profile picture from storage if it exists
+          const storageRef = storage.ref(`profile-pics/${currentUser.uid}`);
+          const downloadURL = await storageRef.getDownloadURL();
+          setProfilePic(downloadURL);
+        }
+      } catch (error) {
+        // If there's an error fetching the profile picture, set it to null
+        setProfilePic(null);
+      }
+    };
+
+    fetchProfilePic();
   }, []);
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     try {
-      await firestore.collection('users').doc(auth.currentUser.uid).update({
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        // If the user is not logged in, redirect to the login page
+        router.push('/login');
+        return;
+      }
+
+      await firestore.collection('users').doc(currentUser.uid).update({
         name: name,
       });
 
       if (profilePic) {
-        const storageRef = storage.ref(`profile-pics/${auth.currentUser.uid}`);
+        const storageRef = storage.ref(`profile-pics/${currentUser.uid}`);
         await storageRef.put(profilePic);
       }
 
       // Refresh the user data after updating
-      const userSnapshot = await firestore
-        .collection('users')
-        .doc(auth.currentUser.uid)
-        .get();
-
+      const userSnapshot = await firestore.collection('users').doc(currentUser.uid).get();
       if (userSnapshot.exists) {
         setUser(userSnapshot.data());
       }
@@ -68,19 +95,34 @@ const profile = () => {
       <h2 className="title">User Profile</h2>
       {user && (
         <form className="form" onSubmit={handleUpdateProfile}>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Name"
-            className="input"
-          />
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleProfilePicChange}
-            className="input"
-          />
+          <div className="profile-pic-wrapper">
+            {/* Display circular user icon if no profile pic */}
+            {!profilePic && (
+              <div className="circular-user-icon" onClick={handleProfilePicClick}>
+                <MdPerson className="user-icon" />
+              </div>
+            )}
+
+            {/* Display the existing profile pic or uploaded profile pic */}
+            {profilePic && (
+              <label htmlFor="profilePicInput" className="profile-pic-label">
+                <img src={profilePic} alt="Author Profile" className="profile-pic" />
+                <div className="edit-icon-overlay">
+                  <FaEdit className="edit-icon" />
+                </div>
+              </label>
+            )}
+
+            {/* Hidden input for uploading profile pic */}
+            <input
+              type="file"
+              accept="image/*"
+              id="profilePicInput"
+              onChange={handleProfilePicChange}
+              style={{ display: 'none' }} // Hide the file input
+            />
+          </div>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" className="input" />
           <button type="submit" className="button">
             Update Profile
           </button>
@@ -104,6 +146,49 @@ const profile = () => {
         .form {
           display: flex;
           flex-direction: column;
+        }
+
+        .profile-pic-wrapper {
+          position: relative;
+          margin-bottom: 20px;
+          cursor: pointer;
+        }
+
+        .profile-pic-label {
+          display: inline-block;
+          position: relative;
+        }
+
+        .profile-pic {
+          width: 100px;
+          height: 100px;
+          border-radius: 50%;
+          object-fit: cover;
+        }
+
+        .edit-icon-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0, 0, 0, 0.5);
+          border-radius: 50%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          opacity: 0;
+          transition: opacity 0.3s ease-in-out;
+        }
+
+        .profile-pic-label:hover .edit-icon-overlay {
+          opacity: 1;
+        }
+
+        .edit-icon {
+          color: #fff;
+          font-size: 24px;
+          cursor: pointer;
         }
 
         .input {

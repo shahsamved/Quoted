@@ -135,9 +135,9 @@ const dashboard = () => {
           {quotes.map((quote) => (
   <li key={quote.id} className="quote-item">
     <div className="quote-header">
-      {quote.profilePic ? (
+      {quote.authorProfilePic ? (
         <img
-          src={quote.profilePic}
+          src={quote.authorProfilePic}
           alt={quote.author}
           className="author-profile-pic"
         />
