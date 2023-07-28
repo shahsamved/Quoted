@@ -1,15 +1,64 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { auth, firestore } from './firebase.js';
-import { FaEdit, FaTrash } from 'react-icons/fa';
+import { auth, firestore, FieldValue } from './firebase.js';
+import { FaEdit, FaTrash, FaHeart } from 'react-icons/fa';
+import LikeButton from './LikeButton';
 
-const dashboard = () => {
+const Dashboard = () => {
   const router = useRouter();
-
+  const { userId } = router.query;
   const [user, setUser] = useState(null);
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const handleLikeClick = async (quoteId) => {
+    try {
+      const userId = auth.currentUser.uid;
+      const likeRef = firestore.collection('likes').doc(`${userId}_${quoteId}`);
+      const likeSnapshot = await likeRef.get();
+      const quoteRef = firestore.collection('quotes').doc(quoteId);
+  
+      if (likeSnapshot.exists) {
+        // If already liked, remove the like
+        await likeRef.delete();
+  
+        // Decrement the likes count in the quote document
+        await quoteRef.update({
+          likes: FieldValue.increment(-1), // Decrement likes by 1
+        });
+  
+        // Update the `quote` object in the `quotes` state
+        setQuotes((prevQuotes) =>
+          prevQuotes.map((quote) =>
+            quote.id === quoteId ? { ...quote, liked: false, likes: quote.likes - 1 } : quote
+          )
+        );
+      } else {
+        // If not liked, add a new like
+        await likeRef.set({
+          userId: userId,
+          quoteId: quoteId,
+          timestamp: new Date(),
+        });
+  
+        // Increment the likes count in the quote document
+        await quoteRef.update({
+          likes: FieldValue.increment(1), // Increment likes by 1
+        });
+  
+        // Update the `quote` object in the `quotes` state
+        setQuotes((prevQuotes) =>
+          prevQuotes.map((quote) =>
+            quote.id === quoteId ? { ...quote, liked: true, likes: quote.likes + 1 } : quote
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error handling like:', error);
+    }
+  };
+  
+  
   
 
   useEffect(() => {
@@ -19,6 +68,8 @@ const dashboard = () => {
         setUser(user);
         fetchUserData(user.uid); // Fetch user data from Firestore
       } else {
+        setUser(null); // Set user to null if not logged in
+        setLoading(false); // Set loading to false if not logged in
         router.push('/login'); // Redirect to login page if the user is not logged in
       }
     });
@@ -29,27 +80,33 @@ const dashboard = () => {
   useEffect(() => {
     // Fetch quotes from Firestore
     const fetchQuotes = async () => {
-        try {
-          const quotesSnapshot = await firestore.collection('quotes').orderBy('timestamp', 'desc').get();
-  
-          if (quotesSnapshot.empty) {
-            // Handle the case where the "quotes" collection is empty
-            setLoading(false);
-            return;
-          }
-  
-          const quotesData = quotesSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-          setQuotes(quotesData);
+      try {
+        const quotesSnapshot = await firestore.collection('quotes').orderBy('timestamp', 'desc').get();
+
+        if (quotesSnapshot.empty) {
+          // Handle the case where the "quotes" collection is empty
           setLoading(false);
-        } catch (error) {
-          console.error('Error fetching quotes:', error);
-          setLoading(false); // Ensure that loading state is set to false in case of an error
+          return;
         }
-      };
-  
-      fetchQuotes();
-    }, []);
-  
+
+        // Inside the `fetchQuotes` function, update the initial state of `liked` and `likes`
+const quotesData = quotesSnapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+    liked: doc.data().liked || false, // Set `liked` to false if not present in Firestore
+    likes: doc.data().likes || 0, // Set `likes` to 0 if not present in Firestore
+  })); 
+        console.log(quotesData); // Log the retrieved quotes
+        setQuotes(quotesData);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching quotes:', error);
+        setLoading(false); // Ensure that loading state is set to false in case of an error
+      }
+    };
+
+    fetchQuotes();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -64,12 +121,16 @@ const dashboard = () => {
     try {
       const userSnapshot = await firestore.collection('users').doc(userId).get();
       if (userSnapshot.exists) {
-        setUser({ ...user, name: userSnapshot.data().name });
+        const userData = { ...userSnapshot.data(), uid: userId };
+        setUser(userData);
       }
+      setLoading(false); // Set loading to false once user data is fetched
     } catch (error) {
       console.error('Error retrieving user data:', error);
+      setLoading(false); // Ensure that loading state is set to false in case of an error
     }
   };
+  
 
   const handleProfileClick = () => {
     router.push('/profile'); // Redirect to the profile page
@@ -85,20 +146,37 @@ const dashboard = () => {
   };
 
   const handleDeleteClick = async (quoteId) => {
-    // Show a confirmation pop-up before deleting the quote
-    const isConfirmed = window.confirm('Are you sure you want to delete this quote?');
+  // Show a confirmation pop-up before deleting the quote
+  const isConfirmed = window.confirm('Are you sure you want to delete this quote?');
 
-    if (isConfirmed) {
-      try {
-        // Delete the quote document from Firestore
-        await firestore.collection('quotes').doc(quoteId).delete();
-        // Update the local quotes state by removing the deleted quote
-        setQuotes((prevQuotes) => prevQuotes.filter((quote) => quote.id !== quoteId));
-      } catch (error) {
-        console.error('Error deleting quote:', error);
+  if (isConfirmed) {
+    try {
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        // Get the quote document from Firestore
+        const quoteRef = firestore.collection('quotes').doc(quoteId);
+        const quoteSnapshot = await quoteRef.get();
+
+        if (quoteSnapshot.exists) {
+          // Check if the current user is the author of the quote
+          if (currentUser.uid === quoteSnapshot.data().authorId) {
+            // Delete the quote document from Firestore
+            await quoteRef.delete();
+            // Update the local quotes state by removing the deleted quote
+            setQuotes((prevQuotes) => prevQuotes.filter((quote) => quote.id !== quoteId));
+          } else {
+            // User is not the author, show an error or display a message
+            console.error('You do not have permission to delete this quote.');
+          }
+        } else {
+          console.error('Quote not found');
+        }
       }
+    } catch (error) {
+      console.error('Error deleting quote:', error);
     }
-  };
+  }
+};
 
   const formatTimestamp = (timestamp) => {
     if (timestamp && timestamp.toDate) {
@@ -112,16 +190,12 @@ const dashboard = () => {
     <div className="container">
       <h2 className="title">Dashboard</h2>
       <div className="user-info">
-  {user && user.authorProfilePic && (
-    <img
-      src={user.authorProfilePic}
-      alt={user.name}
-      className="author-profile-pic"
-    />
-  )}
-  <p>Welcome, {user && user.name}</p>
-  <button onClick={handleLogout}>Logout</button>
-</div>
+        {user && user.authorProfilePic && (
+          <img src={user.authorProfilePic} alt={user.name} className="author-profile-pic" />
+        )}
+        <p>Welcome, {user && user.name}</p>
+        <button onClick={handleLogout}>Logout</button>
+      </div>
 
       <div className="actions">
         <button onClick={handleProfileClick}>Update/View Profile</button>
@@ -133,37 +207,61 @@ const dashboard = () => {
       ) : (
         <ul className="quote-list">
           {quotes.map((quote) => (
-  <li key={quote.id} className="quote-item">
-    <div className="quote-header">
-      {quote.authorProfilePic ? (
-        <img
-          src={quote.authorProfilePic}
-          alt={quote.author}
-          className="author-profile-pic"
-        />
-      ) : (
-        <img
-          src="/placeholder.png" // Replace with a placeholder image path
-          alt={quote.author}
-          className="author-profile-pic"
-        />
-      )}
-      <div className="quote-details">
-        <p className="quote">{quote.quote}</p>
-        <p className="author">- {quote.author}</p>
-      </div>
-    </div>
-    <p className="timestamp">{formatTimestamp(quote.timestamp)}</p>
-    <div className="quote-actions">
-                <button onClick={() => handleEditClick(quote.id)}>
-                  <FaEdit className="edit-icon" />
-                </button>
-                <button onClick={() => handleDeleteClick(quote.id)}>
-                  <FaTrash className="delete-icon" />
-                </button>
+            <li key={quote.id} className="quote-item">
+                <div className="quote-header">
+                {quote.profilePic ? (
+                    <img
+                    src={quote.profilePic}
+                    alt={quote.author}
+                    className="author-profile-pic"
+                    />
+                ) : (
+                    <img
+                    src="/placeholder.png"
+                    alt={quote.author}
+                    className="author-profile-pic"
+                    />
+                )}
+                <div className="quote-details">
+                    <p className="quote">{quote.quote}</p>
+                    <p className="author">- {quote.author}</p>
+                </div>
+                </div>
+                <p className="timestamp">{formatTimestamp(quote.timestamp)}</p>
+                <div className="quote-actions">
+                
+                {(userId === quote.authorId || (user && user.uid === quote.authorId)) &&  ( // Check if the user is the author of the quote
+                    <>
+                    <button onClick={() => handleEditClick(quote.id)}>
+                        <FaEdit className="edit-icon" />
+                    </button>
+                    <button onClick={() => handleDeleteClick(quote.id)}>
+                        <FaTrash className="delete-icon" />
+                    </button>
+                    </>
+                )}
+                       <div className="like-count">
+                       
+                <LikeButton
+                quoteId={quote.id}
+                liked={quote.liked}
+                handleLikeClick={handleLikeClick}
+                likeCount={quote.likes}
+                />
+
               </div>
-  </li>
-))}
+   
+                {/* <button onClick={() => handleLikeClick(quote.id)}>
+                    {quote.liked ? (
+                    <FaHeartFill className="like-icon" />
+                    ) : (
+                    <FaHeart className="like-icon" />
+                    )}
+                </button> */}
+                </div>
+            </li>
+            ))}
+
         </ul>
       )}
 
@@ -264,9 +362,38 @@ const dashboard = () => {
             border: none;
             cursor: pointer;
           }
+          .quote-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 5px;
+          }
+  
+          .edit-icon-container {
+            margin-right: 5px;
+          }
+  
+          .delete-icon-container {
+            color: red;
+          }
+  
+          .quote-actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+          }
+  
+          .like-count {
+            display: flex;
+            align-items: center;
+            margin-right: 10px;
+          }
+  
+          .like-icon {
+            margin-right: 5px;
+          } 
       `}</style>
     </div>
   );
 };
 
-export default dashboard;
+export default Dashboard;

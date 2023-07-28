@@ -6,7 +6,7 @@ import { MdPerson } from 'react-icons/md';
 
 const editQuote = () => {
   const router = useRouter();
-  const { id } = router.query;
+  const { id, userId } = router.query;
 
   const [quote, setQuote] = useState('');
   const [author, setAuthor] = useState('');
@@ -22,9 +22,10 @@ const editQuote = () => {
         const quoteSnapshot = await firestore.collection('quotes').doc(id).get();
         if (quoteSnapshot.exists) {
           const quoteData = quoteSnapshot.data();
+          console.log(quoteData);
           setQuote(quoteData.quote || '');
           setAuthor(quoteData.author || '');
-          setExistingProfilePic(quoteData.authorProfilePic || '');
+          setExistingProfilePic(quoteData.profilePic || '');
         } else {
           setError('Quote not found');
         }
@@ -50,7 +51,7 @@ const editQuote = () => {
         const quoteSnapshot = await firestore.collection('quotes').doc(id).get();
         if (quoteSnapshot.exists) {
           const quoteData = quoteSnapshot.data();
-          setExistingProfilePic(quoteData.authorProfilePic || '');
+          setExistingProfilePic(quoteData.profilePic || '');
         }
       } catch (error) {
         console.error('Error fetching updated quote data:', error);
@@ -66,11 +67,15 @@ const editQuote = () => {
   const handleQuoteUpdate = async (e) => {
     e.preventDefault();
     try {
+      // Fetch the existing quote data from Firestore
+      const quoteSnapshot = await firestore.collection('quotes').doc(id).get();
+      const existingQuoteData = quoteSnapshot.data();
       const quoteData = {
         quote: quote,
         author: author,
         timestamp: new Date(),
-        authorProfilePic: existingProfilePic, // Set the existing profile pic
+        likes: existingQuoteData.likes || 0, // Use existing likes field or default to 0
+        profilePic: existingProfilePic, // Set the existing profile pic
       };
 
       // Upload profile picture if selected
@@ -88,12 +93,13 @@ const editQuote = () => {
 
       await firestore.collection('quotes').doc(id).set(quoteData);
 
-      // Redirect to dashboard after successful quote update
-      router.push('/dashboard');
+      // Redirect back to dashboard with userId as a query parameter
+      router.push(`/dashboard?userId=${userId}`);
     } catch (error) {
       setError('Error updating quote');
     }
   };
+  
 
   const handleProfilePicChange = (e) => {
     const file = e.target.files[0];
@@ -233,7 +239,7 @@ const editQuote = () => {
           .profile-pic-label:hover .profile-pic-overlay {
             opacity: 1;
           }
-          
+
         .input {
           margin-bottom: 10px;
           padding: 10px;

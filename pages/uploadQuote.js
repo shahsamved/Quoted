@@ -10,6 +10,7 @@ const QuoteUpload = () => {
   const [author, setAuthor] = useState('');
   const [profilePic, setProfilePic] = useState(null);
   const [error, setError] = useState(null);
+  const userId = auth.currentUser.uid;
 
   const handleQuoteUpload = async (e) => {
     e.preventDefault();
@@ -19,6 +20,8 @@ const QuoteUpload = () => {
         quote: quote,
         author: author,
         timestamp: new Date(),
+        authorId: userId,
+        likes: 0,
       };
   
       const docRef = await firestore.collection('quotes').add(quoteData);

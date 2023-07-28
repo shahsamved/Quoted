@@ -1,7 +1,7 @@
-import firebase from 'firebase/app';
-import 'firebase/auth';
-import 'firebase/firestore';
-import 'firebase/storage';
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/firestore';
+import 'firebase/compat/auth';
+import 'firebase/compat/storage';
 
 
 // Your Firebase project configuration
@@ -16,13 +16,15 @@ const firebaseConfig = {
 };
 
 // Check if Firebase app is already initialized
-if (!firebase.apps.length) {
+if (typeof firebase !== 'undefined' && !firebase.apps.length) {
   // Initialize Firebase
   firebase.initializeApp(firebaseConfig);
 }
+
 
 // Export the authentication module
 export const auth = firebase.auth();
 export const firestore = firebase.firestore(); 
 export const storage = firebase.storage();
+export const FieldValue = firebase.firestore.FieldValue;
 
