@@ -4,7 +4,7 @@ import { firestore, storage } from './firebase.js';
 import { FaEdit } from 'react-icons/fa';
 import { MdPerson } from 'react-icons/md';
 
-const editQuote = () => {
+const EditQuote = () => {
   const router = useRouter();
   const { id, userId } = router.query;
 
@@ -263,4 +263,4 @@ const editQuote = () => {
   );
 };
 
-export default editQuote;
+export default EditQuote;

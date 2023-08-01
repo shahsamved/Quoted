@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 const IndexPage = () => {
   return (
@@ -7,10 +8,10 @@ const IndexPage = () => {
       <nav>
         <ul>
           <li>
-            <a href="/login">Login</a>
+            <Link href="/login">Login</Link>
           </li>
           <li>
-            <a href="/register">Register</a>
+            <Link href="/register">Register</Link>
           </li>
         </ul>
       </nav>

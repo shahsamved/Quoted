@@ -4,7 +4,7 @@ import { auth, firestore, storage } from './firebase.js';
 import { FaEdit } from 'react-icons/fa';
 import { MdPerson } from 'react-icons/md';
 
-const updateProfile = () => {
+const UpdateProfile = () => {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [name, setName] = useState('');
@@ -257,4 +257,4 @@ const updateProfile = () => {
   );
 };
 
-export default updateProfile;
+export default UpdateProfile;
