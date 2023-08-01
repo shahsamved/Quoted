@@ -15,16 +15,48 @@ const firebaseConfig = {
   measurementId: "G-9X8DGEKEVC"
 };
 
-// Check if Firebase app is already initialized
-if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+if (typeof window !== 'undefined' && !firebase.apps.length) {
   // Initialize Firebase
   firebase.initializeApp(firebaseConfig);
 }
 
-
 // Export the authentication module
 export const auth = firebase.auth();
-export const firestore = firebase.firestore(); 
+export const firestore = firebase.firestore();
 export const storage = firebase.storage();
 export const FieldValue = firebase.firestore.FieldValue;
 
+export const signInWithEmailPassword = async (email, password) => {
+  try {
+    const userCredential = await auth.signInWithEmailAndPassword(email, password);
+    return userCredential.user;
+  } catch (error) {
+    throw new Error('Invalid credentials. Please check your email and password.');
+  }
+};
+
+export const signOut = async () => {
+  try {
+    await auth.signOut();
+  } catch (error) {
+    throw new Error('Failed to sign out.');
+  }
+};
+
+export const getCurrentUser = () => {
+  return new Promise((resolve, reject) => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      unsubscribe();
+      resolve(user);
+    }, reject);
+  });
+};
+
+export const createUserWithEmailPassword = async (email, password) => {
+  try {
+    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+    return userCredential.user;
+  } catch (error) {
+    throw new Error('Failed to create a new account.');
+  }
+};
