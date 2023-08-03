@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import { auth, firestore } from './firebase.js';
+import { auth } from './firebase.js';
 
 const LoginPage = () => {
   const router = useRouter();
