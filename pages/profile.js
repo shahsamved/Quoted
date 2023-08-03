@@ -1,6 +1,7 @@
+import { auth, firestore, storage } from './firebase.js';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
-import { auth, firestore, storage } from './firebase.js';
+
 import { FaEdit } from 'react-icons/fa';
 import { MdPerson } from 'react-icons/md';
 

@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
 import { auth } from './firebase.js';
+import { useState, useEffect } from 'react';
+
 import { useRouter } from 'next/router';
 
 const ResetPasswordPage = () => {

@@ -1,6 +1,7 @@
+import { auth, firestore, FieldValue } from './firebase.js';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { auth, firestore, FieldValue } from './firebase.js';
+
 import { FaEdit, FaTrash, FaHeart } from 'react-icons/fa';
 import LikeButton from './LikeButton';
 

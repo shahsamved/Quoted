@@ -1,6 +1,7 @@
+import { auth, firestore, storage } from './firebase.js';
 import { useState } from 'react';
 import { useRouter } from 'next/router';
-import { auth, firestore, storage } from './firebase.js';
+
 
 
 const QuoteUpload = () => {

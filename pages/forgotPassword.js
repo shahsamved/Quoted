@@ -1,5 +1,6 @@
-import { useState } from 'react';
 import { auth } from './firebase.js';
+import { useState } from 'react';
+
 import { useRouter } from 'next/router';
 
 const ForgotPasswordPage = () => {
