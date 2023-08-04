@@ -15,16 +15,15 @@ const firebaseConfig = {
   measurementId: "G-9X8DGEKEVC"
 };
 
-if (typeof window !== 'undefined' && !firebase.apps.length) {
-  // Initialize Firebase
-  firebase.initializeApp(firebaseConfig);
-}
+
+  const app = firebase.initializeApp(firebaseConfig);
+
 
 // Export the authentication module
-export const auth = firebase.auth();
-export const firestore = firebase.firestore();
-export const storage = firebase.storage();
-export const FieldValue = firebase.firestore.FieldValue;
+export const auth = app.auth();
+export const firestore = app.firestore();
+export const storage = app.storage();
+export const FieldValue = app.firestore.FieldValue;
 
 export const signInWithEmailPassword = async (email, password) => {
   try {
