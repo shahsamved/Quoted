@@ -1,4 +1,4 @@
-import { auth } from './firebase.js';
+import { auth } from '../components/firebase.js';
 import { useState, useEffect } from 'react';
 
 import { useRouter } from 'next/router';

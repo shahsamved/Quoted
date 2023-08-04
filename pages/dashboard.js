@@ -1,4 +1,4 @@
-import { auth, firestore, FieldValue } from './firebase.js';
+import { auth, firestore, FieldValue } from '../components/firebase.js';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 

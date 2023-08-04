@@ -1,4 +1,4 @@
-import { auth, firestore, FieldValue } from './firebase.js';
+import { auth, firestore, FieldValue } from '../components/firebase.js';
 import { useState, useEffect } from 'react';
 
 import { FaHeart, FaRegHeart } from 'react-icons/fa';
