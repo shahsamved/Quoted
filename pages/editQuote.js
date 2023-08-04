@@ -7,7 +7,7 @@ import { MdPerson } from 'react-icons/md';
 
 const EditQuote = () => {
   const router = useRouter();
-  const { id, userId } = router.query;
+  const { id} = router.query;
 
   const [quote, setQuote] = useState('');
   const [author, setAuthor] = useState('');
@@ -74,6 +74,7 @@ const EditQuote = () => {
       const quoteData = {
         quote: quote,
         author: author,
+        authorId: id,
         timestamp: new Date(),
         likes: existingQuoteData.likes || 0, // Use existing likes field or default to 0
         profilePic: existingProfilePic, // Set the existing profile pic
@@ -95,7 +96,7 @@ const EditQuote = () => {
       await firestore.collection('quotes').doc(id).set(quoteData);
 
       // Redirect back to dashboard with userId as a query parameter
-      router.push(`/dashboard?userId=${userId}`);
+      router.push(`/dashboard?userId=${id}`);
     } catch (error) {
       setError('Error updating quote');
     }
