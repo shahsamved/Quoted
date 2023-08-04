@@ -1,0 +1,147 @@
+.body {
+  font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, helvetica neue, helvetica, ubuntu, roboto, noto, segoe ui, arial, sans-serif;
+  background: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  cursor: default;
+  background: #27272e;
+  background-image: url(https://awv3node-homepage.surge.sh/build/assets/stars.svg);
+}
+
+#root {
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 350px;
+  perspective-origin: 50% 50%;
+}
+
+.main {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 columns */
+  grid-template-rows: repeat(3, 1fr); /* 3 rows */
+  grid-gap: 10px; /* Adjust the gap between cards as needed */
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  justify-content: center; /* Center the grid horizontally */
+}
+
+.container {
+  width: 70%;
+  height: 70%;
+  transform-style: preserve-3d;
+}
+
+.container > div {
+  position: absolute;
+  width: 70%;
+  height: 70%;
+  background: grey;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  will-change: transform;
+  cursor: pointer;
+}
+
+.container2 {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.title {
+  font-size: 36px;
+  font-weight: bold;
+  color: #333;
+}
+
+.navbar {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.navList {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navItem {
+  margin-right: 10px;
+}
+
+.loginButton {
+  background-color: #4caf50; /* Green background color */
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.registerButton {
+  background-color: #008CBA; /* Blue background color */
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+/* Mobile Responsive */
+@media screen and (max-width: 100px) {
+  .main {
+    grid-template-columns: repeat(3, 1fr); /* 2 columns for mobile view */
+    grid-template-rows: repeat(3, 1fr); /* 5 rows for mobile view */
+    max-width: 50px; /* Adjust the max width as needed */
+    padding: 10px; /* Adjust the padding as needed */
+  }
+
+  .container {
+    height: 50px;
+    width: 50px; /* Adjust the height of grid items for mobile view */
+    transform-style: flat;
+  }
+
+  .header {
+    margin-bottom: 20px;
+  }
+
+  .navbar {
+    flex-direction: row;
+    margin-top: 20px;
+    align-items: center;
+    justify-content: center; /* Align login and register buttons side by side in mobile view */
+  }
+
+  .navItem {
+    margin-right: 10px;
+  }
+}
